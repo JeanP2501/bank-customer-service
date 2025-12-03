@@ -29,6 +29,9 @@ public class CustomerMapper {
                 .businessName(request.getBusinessName())
                 .taxId(request.getTaxId())
                 .address(request.getAddress())
+                .hasCreditCard(request.getHasCreditCard() != null
+                        ? request.getHasCreditCard()
+                        : false)
                 .createdAt(LocalDateTime.now())
                 .build();
     }

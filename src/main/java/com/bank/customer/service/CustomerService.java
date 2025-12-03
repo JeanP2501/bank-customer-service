@@ -7,6 +7,7 @@ import com.bank.customer.model.dto.CustomerRequest;
 import com.bank.customer.model.dto.CustomerResponse;
 import com.bank.customer.model.entity.Customer;
 import com.bank.customer.repository.CustomerRepository;
+import com.bank.customer.validator.CustomerValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final CustomerValidator customerValidator;
 
     /**
      * Create a new customer
@@ -39,8 +41,10 @@ public class CustomerService {
                         log.warn("Customer already exists with document number: {}", request.getDocumentNumber());
                         return Mono.error(new CustomerAlreadyExistsException(request.getDocumentNumber()));
                     }
-
                     Customer customer = customerMapper.toEntity(request);
+
+                    customerValidator.validateCustomerCreation(customer);
+
                     return customerRepository.save(customer)
                             .doOnSuccess(c -> log.info("Customer created successfully with id: {}", c.getId()))
                             .map(customerMapper::toResponse);
@@ -103,11 +107,12 @@ public class CustomerService {
                                     if (exists) {
                                         return Mono.error(new CustomerAlreadyExistsException(request.getDocumentNumber()));
                                     }
+                                    customerValidator.validateCustomerCreation(existingCustomer);
                                     customerMapper.updateEntity(existingCustomer, request);
                                     return customerRepository.save(existingCustomer);
                                 });
                     }
-
+                    customerValidator.validateCustomerCreation(existingCustomer);
                     customerMapper.updateEntity(existingCustomer, request);
                     return customerRepository.save(existingCustomer);
                 })

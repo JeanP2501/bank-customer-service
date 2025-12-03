@@ -38,4 +38,9 @@ public class CustomerRequest {
     private String taxId;
 
     private String address;
+
+    /**
+     * Indicates if customer has credit card (for VIP/PYME).
+     */
+    private Boolean hasCreditCard;
 }

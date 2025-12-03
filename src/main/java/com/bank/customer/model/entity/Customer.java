@@ -52,8 +52,22 @@ public class Customer {
 
     private String address;
 
+    /**
+     * Indicates if customer has an active credit card.
+     */
+    private Boolean hasCreditCard = false;
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt;
+
+    /**
+     * Check if customer can open VIP or PYME accounts.
+     * @return true if has credit card
+     */
+    public boolean canOpenPremiumAccounts() {
+        return Boolean.TRUE.equals(hasCreditCard);
+    }
+
 }
