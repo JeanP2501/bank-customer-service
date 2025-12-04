@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 /**
  * REST Controller for Customer operations
  * Provides endpoints for CRUD operations
@@ -102,4 +104,11 @@ public class CustomerController {
         return customerService.delete(id)
                 .then(Mono.just(ResponseEntity.noContent().<Void>build()));
     }
+
+    @GetMapping("/delay")
+    public Mono<ResponseEntity<String>> testCircuitBreaker() {
+        return Mono.delay(Duration.ofSeconds(3))
+                .map(t -> ResponseEntity.ok("Delayed result"));
+    }
+
 }
