@@ -5,6 +5,7 @@ import com.bank.customer.exception.CustomerNotFoundException;
 import com.bank.customer.mapper.CustomerMapper;
 import com.bank.customer.model.dto.CustomerRequest;
 import com.bank.customer.model.dto.CustomerResponse;
+import com.bank.customer.model.dto.events.EntityActionEvent;
 import com.bank.customer.model.entity.Customer;
 import com.bank.customer.repository.CustomerRepository;
 import com.bank.customer.validator.CustomerValidator;
@@ -13,6 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Service layer for Customer operations
@@ -26,6 +30,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
     private final CustomerValidator customerValidator;
+    private final KafkaProducerService kafkaProducerService;
 
     /**
      * Create a new customer
@@ -46,7 +51,20 @@ public class CustomerService {
                     customerValidator.validateCustomerCreation(customer);
 
                     return customerRepository.save(customer)
-                            .doOnSuccess(c -> log.info("Customer created successfully with id: {}", c.getId()))
+                            .flatMap(savedCustomer -> {
+                                // Publicar evento después de guardar exitosamente
+                                EntityActionEvent event = EntityActionEvent.builder()
+                                        .eventId(UUID.randomUUID().toString())
+                                        .eventType("CUSTOMER_CREATED")
+                                        .entityType(savedCustomer.getClass().getSimpleName())
+                                        .payload(savedCustomer)
+                                        .timestamp(LocalDateTime.now())
+                                        .build();
+                                return kafkaProducerService.sendEvent(savedCustomer.getId(), event)
+                                        .doOnSuccess(v -> log.info("Customer created and event published: {}", savedCustomer.getId()))
+                                        .doOnError(e -> log.error("Error publishing event: {}", e.getMessage()))
+                                        .thenReturn(savedCustomer);
+                            })
                             .map(customerMapper::toResponse);
                 });
     }
@@ -116,7 +134,20 @@ public class CustomerService {
                     customerMapper.updateEntity(existingCustomer, request);
                     return customerRepository.save(existingCustomer);
                 })
-                .doOnSuccess(c -> log.info("Customer updated successfully with id: {}", id))
+                .flatMap(updatedCustomer -> {
+                    // Publicar evento después de actualizar exitosamente
+                    EntityActionEvent event = EntityActionEvent.builder()
+                            .eventId(UUID.randomUUID().toString())
+                            .eventType("CUSTOMER_UPDATED")
+                            .entityType(updatedCustomer.getClass().getSimpleName())
+                            .timestamp(LocalDateTime.now())
+                            .payload(updatedCustomer)
+                            .build();
+                    return kafkaProducerService.sendEvent(updatedCustomer.getId(), event)
+                            .doOnSuccess(v -> log.info("Customer updated and event published: {}", id))
+                            .doOnError(e -> log.error("Error publishing event: {}", e.getMessage()))
+                            .thenReturn(updatedCustomer);
+                })
                 .map(customerMapper::toResponse);
     }
 
@@ -131,6 +162,18 @@ public class CustomerService {
         return customerRepository.findById(id)
                 .switchIfEmpty(Mono.error(new CustomerNotFoundException(id)))
                 .flatMap(customer -> customerRepository.deleteById(id)
-                        .doOnSuccess(v -> log.info("Customer deleted successfully with id: {}", id)));
+                        .then(Mono.defer(() -> {
+                        // Publicar evento después de eliminar exitosamente
+                        EntityActionEvent event = EntityActionEvent.builder()
+                                .eventId(UUID.randomUUID().toString())
+                                .eventType("CUSTOMER_DELETED")
+                                .entityType(customer.getClass().getSimpleName())
+                                .timestamp(LocalDateTime.now())
+                                .payload(customer)
+                                .build();
+                        return kafkaProducerService.sendEvent(id, event)
+                                .doOnSuccess(v -> log.info("Customer deleted and event published: {}", id))
+                                .doOnError(e -> log.error("Error publishing event: {}", e.getMessage()));
+                })));
     }
 }
