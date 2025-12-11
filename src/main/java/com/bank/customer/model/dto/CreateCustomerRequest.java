@@ -11,14 +11,11 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * DTO for customer creation and update requests
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CustomerRequest {
+public class CreateCustomerRequest {
 
     @NotNull(message = "Customer type is required")
     private CustomerType customerType;
@@ -50,8 +47,4 @@ public class CustomerRequest {
 
     private String address;
 
-    /**
-     * Indicates if customer has credit card (for VIP/PYME).
-     */
-    private Boolean hasCreditCard;
 }

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -19,13 +20,15 @@ public class CustomerResponse {
 
     private String id;
     private CustomerType customerType;
+    private String documentType;
     private String documentNumber;
-    private String firstName;
+    private String names;
     private String lastName;
-    private String email;
-    private String phoneNumber;
+    private String motherLastName;
     private String businessName;
-    private String taxId;
+    private LocalDate birthdate;
+    private String phoneNumber;
+    private String email;
     private String address;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

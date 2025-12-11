@@ -1,5 +1,6 @@
 package com.bank.customer.mapper;
 
+import com.bank.customer.model.dto.CreateCustomerRequest;
 import com.bank.customer.model.dto.CustomerRequest;
 import com.bank.customer.model.dto.CustomerResponse;
 import com.bank.customer.model.entity.Customer;
@@ -21,18 +22,38 @@ public class CustomerMapper {
     public Customer toEntity(CustomerRequest request) {
         return Customer.builder()
                 .customerType(request.getCustomerType())
+                .documentType(request.getDocumentType())
                 .documentNumber(request.getDocumentNumber())
-                .firstName(request.getFirstName())
+                .names(request.getNames())
                 .lastName(request.getLastName())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
+                .motherLastName(request.getMotherLastName())
                 .businessName(request.getBusinessName())
-                .taxId(request.getTaxId())
+                .birthdate(request.getBirthdate())
+                .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
                 .address(request.getAddress())
                 .hasCreditCard(request.getHasCreditCard() != null
                         ? request.getHasCreditCard()
                         : false)
                 .createdAt(LocalDateTime.now())
+                .build();
+    }
+
+    public Customer toEntity(CreateCustomerRequest request) {
+        return Customer.builder()
+                .customerType(request.getCustomerType())
+                .documentType(request.getDocumentType())
+                .documentNumber(request.getDocumentNumber())
+                .names(request.getNames())
+                .lastName(request.getLastName())
+                .motherLastName(request.getMotherLastName())
+                .businessName(request.getBusinessName())
+                .birthdate(request.getBirthdate())
+                .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
+                .address(request.getAddress())
+                .createdAt(LocalDateTime.now())
+                .active(true)
                 .build();
     }
 
@@ -46,12 +67,13 @@ public class CustomerMapper {
                 .id(customer.getId())
                 .customerType(customer.getCustomerType())
                 .documentNumber(customer.getDocumentNumber())
-                .firstName(customer.getFirstName())
+                .names(customer.getNames())
                 .lastName(customer.getLastName())
-                .email(customer.getEmail())
-                .phoneNumber(customer.getPhoneNumber())
+                .motherLastName(customer.getMotherLastName())
                 .businessName(customer.getBusinessName())
-                .taxId(customer.getTaxId())
+                .birthdate(customer.getBirthdate())
+                .phoneNumber(customer.getPhoneNumber())
+                .email(customer.getEmail())
                 .address(customer.getAddress())
                 .createdAt(customer.getCreatedAt())
                 .updatedAt(customer.getUpdatedAt())
@@ -66,12 +88,13 @@ public class CustomerMapper {
     public void updateEntity(Customer customer, CustomerRequest request) {
         customer.setCustomerType(request.getCustomerType());
         customer.setDocumentNumber(request.getDocumentNumber());
-        customer.setFirstName(request.getFirstName());
+        customer.setNames(request.getNames());
         customer.setLastName(request.getLastName());
-        customer.setEmail(request.getEmail());
-        customer.setPhoneNumber(request.getPhoneNumber());
+        customer.setMotherLastName(request.getMotherLastName());
         customer.setBusinessName(request.getBusinessName());
-        customer.setTaxId(request.getTaxId());
+        customer.setBirthdate(request.getBirthdate());
+        customer.setPhoneNumber(request.getPhoneNumber());
+        customer.setEmail(request.getEmail());
         customer.setAddress(request.getAddress());
         customer.setUpdatedAt(LocalDateTime.now());
     }

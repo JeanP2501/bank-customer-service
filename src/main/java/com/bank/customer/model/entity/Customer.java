@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -30,25 +31,31 @@ public class Customer {
     @NotNull(message = "Customer type is required")
     private CustomerType customerType;
 
+    @NotNull(message = "Document type is required")
+    private String documentType;
+
     // For PERSONAL customers
     @NotBlank(message = "Document number is required")
     private String documentNumber;
 
-    @NotBlank(message = "First name is required")
-    private String firstName;
+    @NotBlank(message = "Names is required")
+    private String names;
 
     @NotBlank(message = "Last name is required")
     private String lastName;
 
-    @Email(message = "Email should be valid")
-    private String email;
+    @NotBlank(message = "Mother last name is required")
+    private String motherLastName;
 
-    private String phoneNumber;
-
-    // For BUSINESS customers
     private String businessName;
 
-    private String taxId;
+    private LocalDate birthdate;
+
+    @NotNull(message = "Phone number is required")
+    private String phoneNumber;
+
+    @Email(message = "Email should be valid")
+    private String email;
 
     private String address;
 
@@ -61,6 +68,8 @@ public class Customer {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt;
+
+    private boolean active = false;
 
     /**
      * Check if customer can open VIP or PYME accounts.
