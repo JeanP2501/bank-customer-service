@@ -6,6 +6,7 @@ import com.bank.customer.exception.CustomerNotFoundException;
 import com.bank.customer.mapper.CustomerMapper;
 import com.bank.customer.model.dto.CustomerRequest;
 import com.bank.customer.model.dto.CustomerResponse;
+import com.bank.customer.model.dto.UpgCustomerRequest;
 import com.bank.customer.model.dto.events.EntityActionEvent;
 import com.bank.customer.model.entity.Customer;
 import com.bank.customer.model.enums.DocumentType;
@@ -257,6 +258,18 @@ public class CustomerService {
         }
 
         return Mono.just(request);
+    }
+
+    public Mono<CustomerResponse> upgrade(String id, UpgCustomerRequest request) {
+        log.debug("Upgrade type customer with id: {}", id);
+        return customerRepository.findById(id)
+                .switchIfEmpty(Mono.error(new CustomerNotFoundException(id)))
+                .doOnNext(customerMapper::toResponse)
+                .flatMap(customer -> {
+                    customer.setCustomerType(request.getCustomerType());
+                    return customerRepository.save(customer);
+                })
+                .map(customerMapper::toResponse);
     }
 
 }

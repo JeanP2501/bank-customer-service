@@ -34,17 +34,13 @@ public class Customer {
     @NotNull(message = "Document type is required")
     private String documentType;
 
-    // For PERSONAL customers
     @NotBlank(message = "Document number is required")
     private String documentNumber;
 
-    @NotBlank(message = "Names is required")
     private String names;
 
-    @NotBlank(message = "Last name is required")
     private String lastName;
 
-    @NotBlank(message = "Mother last name is required")
     private String motherLastName;
 
     private String businessName;

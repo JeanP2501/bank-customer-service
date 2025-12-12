@@ -1,6 +1,5 @@
 package com.bank.customer.mapper;
 
-import com.bank.customer.model.dto.CreateCustomerRequest;
 import com.bank.customer.model.dto.CustomerRequest;
 import com.bank.customer.model.dto.CustomerResponse;
 import com.bank.customer.model.entity.Customer;
@@ -36,23 +35,6 @@ public class CustomerMapper {
                         ? request.getHasCreditCard()
                         : false)
                 .createdAt(LocalDateTime.now())
-                .build();
-    }
-
-    public Customer toEntity(CreateCustomerRequest request) {
-        return Customer.builder()
-                .customerType(request.getCustomerType())
-                .documentType(request.getDocumentType())
-                .documentNumber(request.getDocumentNumber())
-                .names(request.getNames())
-                .lastName(request.getLastName())
-                .motherLastName(request.getMotherLastName())
-                .businessName(request.getBusinessName())
-                .birthdate(request.getBirthdate())
-                .phoneNumber(request.getPhoneNumber())
-                .email(request.getEmail())
-                .address(request.getAddress())
-                .createdAt(LocalDateTime.now())
                 .active(true)
                 .build();
     }
@@ -66,6 +48,7 @@ public class CustomerMapper {
         return CustomerResponse.builder()
                 .id(customer.getId())
                 .customerType(customer.getCustomerType())
+                .documentType(customer.getDocumentType())
                 .documentNumber(customer.getDocumentNumber())
                 .names(customer.getNames())
                 .lastName(customer.getLastName())
@@ -86,7 +69,6 @@ public class CustomerMapper {
      * @param request the update request
      */
     public void updateEntity(Customer customer, CustomerRequest request) {
-        customer.setCustomerType(request.getCustomerType());
         customer.setDocumentNumber(request.getDocumentNumber());
         customer.setNames(request.getNames());
         customer.setLastName(request.getLastName());

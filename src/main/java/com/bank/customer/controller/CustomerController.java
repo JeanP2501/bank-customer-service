@@ -2,6 +2,7 @@ package com.bank.customer.controller;
 
 import com.bank.customer.model.dto.CustomerRequest;
 import com.bank.customer.model.dto.CustomerResponse;
+import com.bank.customer.model.dto.UpgCustomerRequest;
 import com.bank.customer.service.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -103,6 +104,21 @@ public class CustomerController {
         log.info("DELETE /api/customers/{} - Deleting customer", id);
         return customerService.delete(id)
                 .then(Mono.just(ResponseEntity.noContent().<Void>build()));
+    }
+
+    /**
+     * Upgrade type customer
+     * PUT /api/customers/upgrade/{id}
+     * @param id the customer id
+     * @param request the customer request
+     * @return Mono of CustomerResponse with 200 status
+     */
+    @PutMapping("/upgrade/{id}")
+    public Mono<ResponseEntity<CustomerResponse>> upgrade(
+            @PathVariable String id,
+            @Valid @RequestBody UpgCustomerRequest request) {
+        log.info("PUT /api/customers/upgrade/{} - Upgrade type customer", id);
+        return customerService.upgrade(id, request).map(ResponseEntity::ok);
     }
 
     @GetMapping("/delay")
