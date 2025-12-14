@@ -264,11 +264,9 @@ public class CustomerService {
         log.debug("Upgrade type customer with id: {}", id);
         return customerRepository.findById(id)
                 .switchIfEmpty(Mono.error(new CustomerNotFoundException(id)))
-                .doOnNext(customerMapper::toResponse)
-                .flatMap(customer -> {
-                    customer.setCustomerType(request.getCustomerType());
-                    return customerRepository.save(customer);
-                })
+                .flatMap(customer -> customerValidator.validateUpgrade(customer, request.getCustomerType()))
+                .doOnNext(customer -> customer.setCustomerType(request.getCustomerType()))  // Modificar antes de guardar
+                .flatMap(customerRepository::save)
                 .map(customerMapper::toResponse);
     }
 

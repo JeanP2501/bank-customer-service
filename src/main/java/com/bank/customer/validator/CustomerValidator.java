@@ -5,6 +5,7 @@ import com.bank.customer.model.entity.Customer;
 import com.bank.customer.model.enums.CustomerType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 /**
  * Validator for customer business rules.
@@ -45,4 +46,15 @@ public class CustomerValidator {
 
         validateCustomerCreation(customer);
     }
+
+    public Mono<Customer> validateUpgrade(final Customer customer, CustomerType newCustomerType){
+        if (newCustomerType.requiresCreditCard() && !customer.canOpenPremiumAccounts()) {
+            String message = String.format(
+                    "Customer type %s requires an active credit card", newCustomerType);
+            log.error(message);
+            return Mono.error(new BusinessRuleException(message));
+        }
+        return Mono.just(customer);
+    }
+
 }
