@@ -1,6 +1,5 @@
 package com.bank.customer.service;
 
-import com.bank.customer.exception.BusinessRuleException;
 import com.bank.customer.exception.CustomerAlreadyExistsException;
 import com.bank.customer.exception.CustomerNotFoundException;
 import com.bank.customer.mapper.CustomerMapper;
@@ -9,7 +8,6 @@ import com.bank.customer.model.dto.CustomerResponse;
 import com.bank.customer.model.dto.UpgCustomerRequest;
 import com.bank.customer.model.dto.events.EntityActionEvent;
 import com.bank.customer.model.entity.Customer;
-import com.bank.customer.model.enums.DocumentType;
 import com.bank.customer.repository.CustomerRepository;
 import com.bank.customer.validator.CustomerValidator;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +17,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -45,9 +42,9 @@ public class CustomerService {
         log.debug("Creating customer with document number: {}", request.getDocumentNumber());
 
         return Mono.just(request)
-                .flatMap(this::validateTypDocument)
-                .flatMap(this::validateLengthDocument)
-                .flatMap(this::validateFormatDocument)
+                .flatMap(customerValidator::validateTypDocument)
+                .flatMap(customerValidator::validateLengthDocument)
+                .flatMap(customerValidator::validateFormatDocument)
                 .flatMap(req -> customerRepository.existsByDocumentNumber(req.getDocumentNumber())
                         .flatMap(exists -> {
                             if (exists) {
@@ -128,38 +125,12 @@ public class CustomerService {
         return customerRepository.findById(id)
                 .switchIfEmpty(Mono.error(new CustomerNotFoundException(id)))
                 .flatMap(existingCustomer ->
-                        validateUpdate(existingCustomer, request)
-                            .flatMap(validRequest -> updateCustomer(existingCustomer, validRequest))
+                        customerValidator.validateUpdate(existingCustomer, request)
+                            .flatMap(validRequest ->
+                                    updateCustomer(existingCustomer, validRequest))
                 )
                 .flatMap(this::publicEventUpdateKafka)
                 .map(customerMapper::toResponse);
-    }
-
-    private Mono<CustomerRequest> validateUpdate(Customer existingCustomer, CustomerRequest request) {
-        return Mono.just(request)
-                // Validar tipo de documento
-                .flatMap(this::validateTypDocument)
-                .flatMap(this::validateLengthDocument)
-                .flatMap(this::validateFormatDocument)
-                // Validar que no exista otro customer con ese documento
-                .flatMap(validRequest -> validateUniqueDocument(existingCustomer, validRequest));
-    }
-
-    private Mono<CustomerRequest> validateUniqueDocument(Customer existingCustomer, CustomerRequest request) {
-        // If the document number has not changed, do not validate.
-        if (existingCustomer.getDocumentNumber().equals(request.getDocumentNumber())) {
-            return Mono.just(request);
-        }
-
-        // If it changed, check that it doesn't exist
-        return customerRepository.existsByDocumentNumber(request.getDocumentNumber())
-                .flatMap(exists -> {
-                    if (exists) {
-                        log.warn("Document number already exists: {}", request.getDocumentNumber());
-                        return Mono.error(new CustomerAlreadyExistsException(request.getDocumentNumber()));
-                    }
-                    return Mono.just(request);
-                });
     }
 
     private Mono<Customer> updateCustomer(Customer existingCustomer, CustomerRequest request) {
@@ -214,58 +185,14 @@ public class CustomerService {
                 .then();
     }
 
-    /* ======= VALIDATE ======== */
-    private Mono<CustomerRequest> validateTypDocument(CustomerRequest request) {
-        if (!DocumentType.isValid(request.getDocumentType())) {
-            String tiposValidos = String.join(", ",
-                    Arrays.stream(DocumentType.values())
-                            .map(DocumentType::getCode)
-                            .toArray(String[]::new)
-            );
 
-            return Mono.error(new BusinessRuleException(
-                    "Tipo de documento inválido: " + request.getDocumentType() +
-                            ". Tipos válidos: " + tiposValidos));
-        }
-        return Mono.just(request);
-    }
-
-    private Mono<CustomerRequest> validateLengthDocument(CustomerRequest request) {
-        DocumentType docType = DocumentType.fromCode(request.getDocumentType())
-                .orElseThrow(); // Ya validado en el paso anterior
-
-        if (!docType.isValidLength(request.getDocumentNumber())) {
-            return Mono.error(new BusinessRuleException(
-                    String.format("El %s debe tener exactamente %d dígitos. Recibido: %d",
-                            docType.getCode(),
-                            docType.getLength(),
-                            request.getDocumentNumber().length())));
-        }
-
-        return Mono.just(request);
-    }
-
-    private Mono<CustomerRequest> validateFormatDocument(CustomerRequest request) {
-        DocumentType docType = DocumentType.fromCode(request.getDocumentType())
-                .orElseThrow();
-
-        if (!docType.isValidFormat(request.getDocumentNumber())) {
-            String mensaje = (docType == DocumentType.DNI || docType == DocumentType.RUC)
-                    ? "El " + docType.getCode() + " debe contener solo números"
-                    : "El " + docType.getCode() + " debe contener solo letras y números";
-
-            return Mono.error(new BusinessRuleException(mensaje));
-        }
-
-        return Mono.just(request);
-    }
 
     public Mono<CustomerResponse> upgrade(String id, UpgCustomerRequest request) {
         log.debug("Upgrade type customer with id: {}", id);
         return customerRepository.findById(id)
                 .switchIfEmpty(Mono.error(new CustomerNotFoundException(id)))
                 .flatMap(customer -> customerValidator.validateUpgrade(customer, request.getCustomerType()))
-                .doOnNext(customer -> customer.setCustomerType(request.getCustomerType()))  // Modificar antes de guardar
+                .doOnNext(customer -> customer.setCustomerType(request.getCustomerType()))
                 .flatMap(customerRepository::save)
                 .map(customerMapper::toResponse);
     }
