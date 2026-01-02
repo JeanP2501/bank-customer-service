@@ -32,6 +32,7 @@ public class CustomerResponse {
     private String address;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean active;
     /**
      * Indicates if customer has credit card.
      */

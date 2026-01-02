@@ -60,6 +60,7 @@ public class CustomerMapper {
                 .address(customer.getAddress())
                 .createdAt(customer.getCreatedAt())
                 .updatedAt(customer.getUpdatedAt())
+                .active(customer.isActive())
                 .build();
     }
 
